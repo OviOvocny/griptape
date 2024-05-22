@@ -34,7 +34,7 @@ class OpenAiImageGenerationDriver(BaseImageGenerationDriver):
     api_type: str = field(default=openai.api_type, kw_only=True)
     api_version: Optional[str] = field(default=openai.api_version, kw_only=True, metadata={"serializable": True})
     base_url: Optional[str] = field(default=None, kw_only=True, metadata={"serializable": True})
-    api_key: Optional[str] = field(default=None, kw_only=True, metadata={"serializable": True})
+    api_key: Optional[str] = field(default=None, kw_only=True, metadata={"serializable": False})
     organization: Optional[str] = field(default=openai.organization, kw_only=True, metadata={"serializable": True})
     client: openai.OpenAI = field(
         default=Factory(
@@ -46,9 +46,9 @@ class OpenAiImageGenerationDriver(BaseImageGenerationDriver):
     quality: Union[Literal["standard"], Literal["hd"]] = field(
         default="standard", kw_only=True, metadata={"serializable": True}
     )
-    image_size: (
-        Union[Literal["256x256"], Literal["512x512"], Literal["1024x1024"], Literal["1024x1792"], Literal["1792x1024"]]
-    ) = field(default="1024x1024", kw_only=True, metadata={"serializable": True})
+    image_size: Union[
+        Literal["256x256"], Literal["512x512"], Literal["1024x1024"], Literal["1024x1792"], Literal["1792x1024"]
+    ] = field(default="1024x1024", kw_only=True, metadata={"serializable": True})
     response_format: Literal["b64_json"] = field(default="b64_json", kw_only=True, metadata={"serializable": True})
 
     def try_text_to_image(self, prompts: list[str], negative_prompts: Optional[list[str]] = None) -> ImageArtifact:
@@ -130,7 +130,7 @@ class OpenAiImageGenerationDriver(BaseImageGenerationDriver):
 
         return ImageArtifact(
             value=image_data,
-            mime_type="image/png",
+            format="png",
             width=image_dimensions[0],
             height=image_dimensions[1],
             model=self.model,

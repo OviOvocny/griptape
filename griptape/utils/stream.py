@@ -33,7 +33,7 @@ class Stream:
 
     @structure.validator  # pyright: ignore
     def validate_structure(self, _, structure: Structure):
-        if structure and not structure.config.global_drivers.prompt_driver.stream:
+        if structure and not structure.config.prompt_driver.stream:
             raise ValueError("prompt driver does not have streaming enabled, enable with stream=True")
 
     _event_queue: Queue[BaseEvent] = field(default=Factory(lambda: Queue()))
@@ -57,7 +57,7 @@ class Stream:
             self._event_queue.put(event)
 
         stream_event_listener = EventListener(
-            event_handler, event_types=[CompletionChunkEvent, FinishPromptEvent, FinishStructureRunEvent]
+            handler=event_handler, event_types=[CompletionChunkEvent, FinishPromptEvent, FinishStructureRunEvent]
         )
         self.structure.add_event_listener(stream_event_listener)
 

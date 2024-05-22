@@ -1,15 +1,14 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
 from collections.abc import Iterator
-from os import environ
-from griptape.utils import PromptStack, import_optional_dependency
+from typing import TYPE_CHECKING
 
-environ["TRANSFORMERS_VERBOSITY"] = "error"
+from attr import Factory, define, field
 
-from attr import define, field, Factory
 from griptape.artifacts import TextArtifact
 from griptape.drivers import BasePromptDriver
 from griptape.tokenizers import HuggingFaceTokenizer
+from griptape.utils import PromptStack, import_optional_dependency
 
 if TYPE_CHECKING:
     from huggingface_hub import InferenceClient
@@ -45,7 +44,7 @@ class HuggingFaceHubPromptDriver(BasePromptDriver):
         default=Factory(
             lambda self: HuggingFaceTokenizer(
                 tokenizer=import_optional_dependency("transformers").AutoTokenizer.from_pretrained(self.model),
-                max_tokens=self.max_tokens,
+                max_output_tokens=self.max_tokens,
             ),
             takes_self=True,
         ),

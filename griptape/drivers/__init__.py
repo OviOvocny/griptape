@@ -9,12 +9,14 @@ from .prompt.huggingface_hub_prompt_driver import HuggingFaceHubPromptDriver
 from .prompt.anthropic_prompt_driver import AnthropicPromptDriver
 from .prompt.amazon_sagemaker_prompt_driver import AmazonSageMakerPromptDriver
 from .prompt.amazon_bedrock_prompt_driver import AmazonBedrockPromptDriver
+from .prompt.google_prompt_driver import GooglePromptDriver
 from .prompt.base_multi_model_prompt_driver import BaseMultiModelPromptDriver
 from .prompt.dummy_prompt_driver import DummyPromptDriver
 
 from .memory.conversation.base_conversation_memory_driver import BaseConversationMemoryDriver
 from .memory.conversation.local_conversation_memory_driver import LocalConversationMemoryDriver
 from .memory.conversation.amazon_dynamodb_conversation_memory_driver import AmazonDynamoDbConversationMemoryDriver
+from .memory.conversation.redis_conversation_memory_driver import RedisConversationMemoryDriver
 
 from .embedding.base_embedding_driver import BaseEmbeddingDriver
 from .embedding.openai_embedding_driver import OpenAiEmbeddingDriver
@@ -23,7 +25,9 @@ from .embedding.base_multi_model_embedding_driver import BaseMultiModelEmbedding
 from .embedding.amazon_sagemaker_embedding_driver import AmazonSageMakerEmbeddingDriver
 from .embedding.amazon_bedrock_titan_embedding_driver import AmazonBedrockTitanEmbeddingDriver
 from .embedding.amazon_bedrock_cohere_embedding_driver import AmazonBedrockCohereEmbeddingDriver
+from .embedding.voyageai_embedding_driver import VoyageAiEmbeddingDriver
 from .embedding.huggingface_hub_embedding_driver import HuggingFaceHubEmbeddingDriver
+from .embedding.google_embedding_driver import GoogleEmbeddingDriver
 from .embedding.dummy_embedding_driver import DummyEmbeddingDriver
 
 from .embedding_model.base_embedding_model_driver import BaseEmbeddingModelDriver
@@ -69,9 +73,39 @@ from .image_generation.amazon_bedrock_image_generation_driver import AmazonBedro
 from .image_generation.azure_openai_image_generation_driver import AzureOpenAiImageGenerationDriver
 from .image_generation.dummy_image_generation_driver import DummyImageGenerationDriver
 
+from .image_query_model.base_image_query_model_driver import BaseImageQueryModelDriver
+from .image_query_model.bedrock_claude_image_query_model_driver import BedrockClaudeImageQueryModelDriver
+
 from .image_query.base_image_query_driver import BaseImageQueryDriver
-from .image_query.openai_vision_image_query_driver import OpenAiVisionImageQueryDriver
+from .image_query.base_multi_model_image_query_driver import BaseMultiModelImageQueryDriver
 from .image_query.dummy_image_query_driver import DummyImageQueryDriver
+from .image_query.openai_vision_image_query_driver import OpenAiVisionImageQueryDriver
+from .image_query.anthropic_image_query_driver import AnthropicImageQueryDriver
+from .image_query.azure_openai_vision_image_query_driver import AzureOpenAiVisionImageQueryDriver
+from .image_query.amazon_bedrock_image_query_driver import AmazonBedrockImageQueryDriver
+
+from .web_scraper.base_web_scraper_driver import BaseWebScraperDriver
+from .web_scraper.trafilatura_web_scraper_driver import TrafilaturaWebScraperDriver
+from .web_scraper.markdownify_web_scraper_driver import MarkdownifyWebScraperDriver
+
+from .event_listener.base_event_listener_driver import BaseEventListenerDriver
+from .event_listener.amazon_sqs_event_listener_driver import AmazonSqsEventListenerDriver
+from .event_listener.webhook_event_listener_driver import WebhookEventListenerDriver
+from .event_listener.aws_iot_core_event_listener_driver import AwsIotCoreEventListenerDriver
+from .event_listener.griptape_cloud_event_listener_driver import GriptapeCloudEventListenerDriver
+
+from .file_manager.base_file_manager_driver import BaseFileManagerDriver
+from .file_manager.local_file_manager_driver import LocalFileManagerDriver
+from .file_manager.amazon_s3_file_manager_driver import AmazonS3FileManagerDriver
+
+from .text_to_speech.base_text_to_speech_driver import BaseTextToSpeechDriver
+from .text_to_speech.dummy_text_to_speech_driver import DummyTextToSpeechDriver
+from .text_to_speech.elevenlabs_text_to_speech_driver import ElevenLabsTextToSpeechDriver
+from .text_to_speech.openai_text_to_speech_driver import OpenAiTextToSpeechDriver
+
+from .structure_run.base_structure_run_driver import BaseStructureRunDriver
+from .structure_run.griptape_cloud_structure_run_driver import GriptapeCloudStructureRunDriver
+from .structure_run.local_structure_run_driver import LocalStructureRunDriver
 
 __all__ = [
     "BasePromptDriver",
@@ -85,11 +119,13 @@ __all__ = [
     "AnthropicPromptDriver",
     "AmazonSageMakerPromptDriver",
     "AmazonBedrockPromptDriver",
+    "GooglePromptDriver",
     "BaseMultiModelPromptDriver",
     "DummyPromptDriver",
     "BaseConversationMemoryDriver",
     "LocalConversationMemoryDriver",
     "AmazonDynamoDbConversationMemoryDriver",
+    "RedisConversationMemoryDriver",
     "BaseEmbeddingDriver",
     "OpenAiEmbeddingDriver",
     "AzureOpenAiEmbeddingDriver",
@@ -97,7 +133,9 @@ __all__ = [
     "AmazonSageMakerEmbeddingDriver",
     "AmazonBedrockTitanEmbeddingDriver",
     "AmazonBedrockCohereEmbeddingDriver",
+    "VoyageAiEmbeddingDriver",
     "HuggingFaceHubEmbeddingDriver",
+    "GoogleEmbeddingDriver",
     "DummyEmbeddingDriver",
     "BaseEmbeddingModelDriver",
     "SageMakerHuggingFaceEmbeddingModelDriver",
@@ -134,7 +172,31 @@ __all__ = [
     "AmazonBedrockImageGenerationDriver",
     "AzureOpenAiImageGenerationDriver",
     "DummyImageGenerationDriver",
+    "BaseImageQueryModelDriver",
+    "BedrockClaudeImageQueryModelDriver",
     "BaseImageQueryDriver",
     "OpenAiVisionImageQueryDriver",
+    "AzureOpenAiVisionImageQueryDriver",
     "DummyImageQueryDriver",
+    "AnthropicImageQueryDriver",
+    "BaseMultiModelImageQueryDriver",
+    "AmazonBedrockImageQueryDriver",
+    "BaseWebScraperDriver",
+    "TrafilaturaWebScraperDriver",
+    "MarkdownifyWebScraperDriver",
+    "BaseEventListenerDriver",
+    "AmazonSqsEventListenerDriver",
+    "WebhookEventListenerDriver",
+    "AwsIotCoreEventListenerDriver",
+    "GriptapeCloudEventListenerDriver",
+    "BaseFileManagerDriver",
+    "LocalFileManagerDriver",
+    "AmazonS3FileManagerDriver",
+    "BaseTextToSpeechDriver",
+    "DummyTextToSpeechDriver",
+    "ElevenLabsTextToSpeechDriver",
+    "OpenAiTextToSpeechDriver",
+    "BaseStructureRunDriver",
+    "GriptapeCloudStructureRunDriver",
+    "LocalStructureRunDriver",
 ]

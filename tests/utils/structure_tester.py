@@ -25,6 +25,7 @@ from griptape.drivers import (
     AmazonSageMakerPromptDriver,
     SageMakerLlamaPromptModelDriver,
     SageMakerFalconPromptModelDriver,
+    GooglePromptDriver,
 )
 
 
@@ -61,6 +62,9 @@ class StructureTester:
         "OPENAI_CHAT_4": TesterPromptDriverOption(
             prompt_driver=OpenAiChatPromptDriver(model="gpt-4", api_key=os.environ["OPENAI_API_KEY"]), enabled=True
         ),
+        "OPENAI_CHAT_4o": TesterPromptDriverOption(
+            prompt_driver=OpenAiChatPromptDriver(model="gpt-4o", api_key=os.environ["OPENAI_API_KEY"]), enabled=True
+        ),
         "OPENAI_CHAT_4_1106_PREVIEW": TesterPromptDriverOption(
             prompt_driver=OpenAiChatPromptDriver(model="gpt-4-1106-preview", api_key=os.environ["OPENAI_API_KEY"]),
             enabled=True,
@@ -71,38 +75,42 @@ class StructureTester:
         ),
         "AZURE_CHAT_35_TURBO": TesterPromptDriverOption(
             prompt_driver=AzureOpenAiChatPromptDriver(
-                api_key=os.environ["AZURE_OPENAI_API_KEY"],
+                api_key=os.environ["AZURE_OPENAI_API_KEY_1"],
                 model="gpt-35-turbo",
                 azure_deployment=os.environ["AZURE_OPENAI_35_TURBO_DEPLOYMENT_ID"],
-                azure_endpoint=os.environ["AZURE_OPENAI_API_BASE"],
+                azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT_1"],
             ),
             enabled=True,
         ),
-        "AZURE_CHAT_35_TURBO_16k": TesterPromptDriverOption(
+        "AZURE_CHAT_35_TURBO_16K": TesterPromptDriverOption(
             prompt_driver=AzureOpenAiChatPromptDriver(
-                api_key=os.environ["AZURE_OPENAI_API_KEY"],
+                api_key=os.environ["AZURE_OPENAI_API_KEY_1"],
                 model="gpt-35-turbo-16k",
-                azure_deployment=os.environ["AZURE_OPENAI_35_TURBO_16k_DEPLOYMENT_ID"],
-                azure_endpoint=os.environ["AZURE_OPENAI_API_BASE"],
+                azure_deployment=os.environ["AZURE_OPENAI_35_TURBO_16K_DEPLOYMENT_ID"],
+                azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT_1"],
             ),
             enabled=True,
         ),
         "AZURE_CHAT_4": TesterPromptDriverOption(
             prompt_driver=AzureOpenAiChatPromptDriver(
-                api_key=os.environ["AZURE_OPENAI_API_KEY"],
+                api_key=os.environ["AZURE_OPENAI_API_KEY_1"],
                 model="gpt-4",
                 azure_deployment=os.environ["AZURE_OPENAI_4_DEPLOYMENT_ID"],
-                azure_endpoint=os.environ["AZURE_OPENAI_API_BASE"],
+                azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT_1"],
             ),
             enabled=True,
         ),
-        "AZURE_CHAT_4_32k": TesterPromptDriverOption(
+        "AZURE_CHAT_4_32K": TesterPromptDriverOption(
             prompt_driver=AzureOpenAiChatPromptDriver(
-                api_key=os.environ["AZURE_OPENAI_API_KEY"],
+                api_key=os.environ["AZURE_OPENAI_API_KEY_1"],
                 model="gpt-4-32k",
-                azure_deployment=os.environ["AZURE_OPENAI_4_32k_DEPLOYMENT_ID"],
-                azure_endpoint=os.environ["AZURE_OPENAI_API_BASE"],
+                azure_deployment=os.environ["AZURE_OPENAI_4_32K_DEPLOYMENT_ID"],
+                azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT_1"],
             ),
+            enabled=True,
+        ),
+        "ANTHROPIC_CLAUDE_2_INSTANT": TesterPromptDriverOption(
+            prompt_driver=AnthropicPromptDriver(model="claude-instant-1.2", api_key=os.environ["ANTHROPIC_API_KEY"]),
             enabled=True,
         ),
         "ANTHROPIC_CLAUDE_2": TesterPromptDriverOption(
@@ -111,6 +119,24 @@ class StructureTester:
         ),
         "ANTHROPIC_CLAUDE_2.1": TesterPromptDriverOption(
             prompt_driver=AnthropicPromptDriver(model="claude-2.1", api_key=os.environ["ANTHROPIC_API_KEY"]),
+            enabled=True,
+        ),
+        "ANTHROPIC_CLAUDE_3_OPUS": TesterPromptDriverOption(
+            prompt_driver=AnthropicPromptDriver(
+                model="claude-3-opus-20240229", api_key=os.environ["ANTHROPIC_API_KEY"]
+            ),
+            enabled=True,
+        ),
+        "ANTHROPIC_CLAUDE_3_SONNET": TesterPromptDriverOption(
+            prompt_driver=AnthropicPromptDriver(
+                model="claude-3-sonnet-20240229", api_key=os.environ["ANTHROPIC_API_KEY"]
+            ),
+            enabled=True,
+        ),
+        "ANTHROPIC_CLAUDE_3_HAIKU": TesterPromptDriverOption(
+            prompt_driver=AnthropicPromptDriver(
+                model="claude-3-haiku-20240307", api_key=os.environ["ANTHROPIC_API_KEY"]
+            ),
             enabled=True,
         ),
         "COHERE_COMMAND": TesterPromptDriverOption(
@@ -122,9 +148,33 @@ class StructureTester:
             ),
             enabled=True,
         ),
+        "BEDROCK_CLAUDE_INSTANT": TesterPromptDriverOption(
+            prompt_driver=AmazonBedrockPromptDriver(
+                model="anthropic.claude-instant-v1", prompt_model_driver=BedrockClaudePromptModelDriver()
+            ),
+            enabled=True,
+        ),
         "BEDROCK_CLAUDE_2": TesterPromptDriverOption(
             prompt_driver=AmazonBedrockPromptDriver(
                 model="anthropic.claude-v2", prompt_model_driver=BedrockClaudePromptModelDriver()
+            ),
+            enabled=True,
+        ),
+        "BEDROCK_CLAUDE_2.1": TesterPromptDriverOption(
+            prompt_driver=AmazonBedrockPromptDriver(
+                model="anthropic.claude-v2:1", prompt_model_driver=BedrockClaudePromptModelDriver()
+            ),
+            enabled=True,
+        ),
+        "BEDROCK_CLAUDE_3_SONNET": TesterPromptDriverOption(
+            prompt_driver=AmazonBedrockPromptDriver(
+                model="anthropic.claude-3-sonnet-20240229-v1:0", prompt_model_driver=BedrockClaudePromptModelDriver()
+            ),
+            enabled=True,
+        ),
+        "BEDROCK_CLAUDE_3_HAIKU": TesterPromptDriverOption(
+            prompt_driver=AmazonBedrockPromptDriver(
+                model="anthropic.claude-3-haiku-20240307-v1:0", prompt_model_driver=BedrockClaudePromptModelDriver()
             ),
             enabled=True,
         ),
@@ -160,15 +210,18 @@ class StructureTester:
             ),
             enabled=False,
         ),
+        "GOOGLE_GEMINI_PRO": TesterPromptDriverOption(
+            prompt_driver=GooglePromptDriver(model="gemini-pro", api_key=os.environ["GOOGLE_API_KEY"]), enabled=True
+        ),
     }
     TOOLKIT_TASK_CAPABLE_PROMPT_DRIVERS = get_enabled_prompt_drivers(
         [
             PROMPT_DRIVERS["OPENAI_CHAT_4"],
             PROMPT_DRIVERS["OPENAI_CHAT_4_1106_PREVIEW"],
             PROMPT_DRIVERS["AZURE_CHAT_4"],
-            PROMPT_DRIVERS["AZURE_CHAT_4_32k"],
-            PROMPT_DRIVERS["ANTHROPIC_CLAUDE_2"],
-            PROMPT_DRIVERS["ANTHROPIC_CLAUDE_2.1"],
+            PROMPT_DRIVERS["AZURE_CHAT_4_32K"],
+            PROMPT_DRIVERS["ANTHROPIC_CLAUDE_3_OPUS"],
+            PROMPT_DRIVERS["GOOGLE_GEMINI_PRO"],
         ]
     )
     TOOL_TASK_CAPABLE_PROMPT_DRIVERS = get_enabled_prompt_drivers(PROMPT_DRIVERS.values())
@@ -224,10 +277,10 @@ class StructureTester:
                 ),
             ],
             prompt_driver=AzureOpenAiChatPromptDriver(
-                api_key=os.environ["AZURE_OPENAI_API_KEY"],
-                model="gpt-4",
+                api_key=os.environ["AZURE_OPENAI_API_KEY_1"],
+                model="gpt-4o",
                 azure_deployment=os.environ["AZURE_OPENAI_4_DEPLOYMENT_ID"],
-                azure_endpoint=os.environ["AZURE_OPENAI_API_BASE"],
+                azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT_1"],
                 response_format="json_object",
             ),
             tasks=[

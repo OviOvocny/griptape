@@ -1,10 +1,13 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
 from schema import Schema, Literal
 from attr import define, field, Factory
 from griptape.artifacts import TextArtifact, ErrorArtifact, ListArtifact
 from griptape.utils.decorators import activity
 from griptape.tools import BaseAwsClient
-from mypy_boto3_iam import Client
+
+if TYPE_CHECKING:
+    from mypy_boto3_iam import Client
 
 
 @define
@@ -56,7 +59,9 @@ class AwsIamClient(BaseAwsClient):
             policy_names = policies["PolicyNames"]
 
             attached_policies = self.iam_client.list_attached_user_policies(UserName=params["values"]["user_name"])
-            attached_policy_names = [p["PolicyName"] for p in attached_policies["AttachedPolicies"]]
+            attached_policy_names = [
+                p["PolicyName"] for p in attached_policies["AttachedPolicies"] if "PolicyName" in p
+            ]
 
             return ListArtifact([TextArtifact(str(p)) for p in policy_names + attached_policy_names])
         except Exception as e:

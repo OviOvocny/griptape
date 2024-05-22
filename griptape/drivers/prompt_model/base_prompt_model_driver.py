@@ -11,23 +11,19 @@ from griptape.mixins import SerializableMixin
 
 @define
 class BasePromptModelDriver(SerializableMixin, ABC):
-    max_tokens: int = field(default=600, kw_only=True)
+    max_tokens: Optional[int] = field(default=None, kw_only=True)
     prompt_driver: Optional[BasePromptDriver] = field(default=None, kw_only=True)
     supports_streaming: bool = field(default=True, kw_only=True)
 
     @property
     @abstractmethod
-    def tokenizer(self) -> BaseTokenizer:
-        ...
+    def tokenizer(self) -> BaseTokenizer: ...
 
     @abstractmethod
-    def prompt_stack_to_model_input(self, prompt_stack: PromptStack) -> str | list | dict:
-        ...
+    def prompt_stack_to_model_input(self, prompt_stack: PromptStack) -> str | list | dict: ...
 
     @abstractmethod
-    def prompt_stack_to_model_params(self, prompt_stack: PromptStack) -> dict:
-        ...
+    def prompt_stack_to_model_params(self, prompt_stack: PromptStack) -> dict: ...
 
     @abstractmethod
-    def process_output(self, output: list[dict] | str | bytes) -> TextArtifact:
-        ...
+    def process_output(self, output: list[dict] | str | bytes) -> TextArtifact: ...

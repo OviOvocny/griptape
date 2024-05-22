@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 @define
 class BaseImageQueryDriver(SerializableMixin, ExponentialBackoffMixin, ABC):
     structure: Optional[Structure] = field(default=None, kw_only=True)
+    max_tokens: int = field(default=256, kw_only=True, metadata={"serializable": True})
 
     def before_run(self, query: str, images: list[ImageArtifact]) -> None:
         if self.structure:
@@ -41,5 +42,4 @@ class BaseImageQueryDriver(SerializableMixin, ExponentialBackoffMixin, ABC):
             raise Exception("image query driver failed after all retry attempts")
 
     @abstractmethod
-    def try_query(self, query: str, images: list[ImageArtifact]) -> TextArtifact:
-        ...
+    def try_query(self, query: str, images: list[ImageArtifact]) -> TextArtifact: ...

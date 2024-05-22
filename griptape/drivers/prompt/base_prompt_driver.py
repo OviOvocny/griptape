@@ -1,10 +1,9 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional, Callable, Tuple, Type
+from typing import TYPE_CHECKING, Optional, Callable
 from collections.abc import Iterator
 from attr import define, field, Factory
 from griptape.events import StartPromptEvent, FinishPromptEvent, CompletionChunkEvent
-from griptape.memory import meta
 from griptape.mixins.serializable_mixin import SerializableMixin
 from griptape.utils import PromptStack
 from griptape.mixins import ExponentialBackoffMixin
@@ -44,7 +43,7 @@ class BasePromptDriver(SerializableMixin, ExponentialBackoffMixin, ABC):
     stream: bool = field(default=False, kw_only=True, metadata={"serializable": True})
 
     def max_output_tokens(self, text: str | list) -> int:
-        tokens_left = self.tokenizer.count_tokens_left(text)
+        tokens_left = self.tokenizer.count_output_tokens_left(text)
 
         if self.max_tokens:
             return min(self.max_tokens, tokens_left)
@@ -58,6 +57,7 @@ class BasePromptDriver(SerializableMixin, ExponentialBackoffMixin, ABC):
         if self.structure:
             self.structure.publish_event(
                 StartPromptEvent(
+                    model=self.model,
                     token_count=self.token_count(prompt_stack),
                     prompt_stack=prompt_stack,
                     prompt=self.prompt_stack_to_string(prompt_stack),
@@ -67,7 +67,7 @@ class BasePromptDriver(SerializableMixin, ExponentialBackoffMixin, ABC):
     def after_run(self, result: TextArtifact) -> None:
         if self.structure:
             self.structure.publish_event(
-                FinishPromptEvent(token_count=result.token_count(self.tokenizer), result=result.value)
+                FinishPromptEvent(model=self.model, token_count=result.token_count(self.tokenizer), result=result.value)
             )
 
     def run(self, prompt_stack: PromptStack) -> TextArtifact:
@@ -108,9 +108,7 @@ class BasePromptDriver(SerializableMixin, ExponentialBackoffMixin, ABC):
         return "\n\n".join(prompt_lines)
 
     @abstractmethod
-    def try_run(self, prompt_stack: PromptStack) -> TextArtifact:
-        ...
+    def try_run(self, prompt_stack: PromptStack) -> TextArtifact: ...
 
     @abstractmethod
-    def try_stream(self, prompt_stack: PromptStack) -> Iterator[TextArtifact]:
-        ...
+    def try_stream(self, prompt_stack: PromptStack) -> Iterator[TextArtifact]: ...

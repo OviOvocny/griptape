@@ -5,12 +5,15 @@ from typing import Union, Literal, get_args, get_origin
 from collections.abc import Sequence
 
 import attrs
-from marshmallow import Schema, fields
+from marshmallow import Schema, fields, EXCLUDE
 
 from griptape.schemas.bytes_field import Bytes
 
 
 class BaseSchema(Schema):
+    class Meta:
+        unknown = EXCLUDE
+
     DATACLASS_TYPE_MAPPING = {**Schema.TYPE_MAPPING, dict: fields.Dict, bytes: Bytes}
 
     @classmethod
@@ -97,13 +100,16 @@ class BaseSchema(Schema):
         Args:
             attrs_cls: An attrs class.
         """
+        from griptape.utils.import_utils import import_optional_dependency, is_dependency_installed
 
         # These modules are required to avoid `NameError`s when resolving types.
         from griptape.drivers import BaseConversationMemoryDriver, BasePromptDriver, BasePromptModelDriver
         from griptape.structures import Structure
         from griptape.utils import PromptStack
         from griptape.tokenizers.base_tokenizer import BaseTokenizer
-        import boto3
+        from typing import Any
+
+        boto3 = import_optional_dependency("boto3") if is_dependency_installed("boto3") else Any
 
         attrs.resolve_types(
             attrs_cls,

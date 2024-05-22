@@ -1,5 +1,5 @@
 from attr import define, field, Factory
-from typing import Optional
+from typing import Callable, Optional
 from griptape.utils import PromptStack
 from griptape.drivers import OpenAiChatPromptDriver
 import openai
@@ -9,7 +9,7 @@ import openai
 class AzureOpenAiChatPromptDriver(OpenAiChatPromptDriver):
     """
     Attributes:
-        azure_deployment: An Azure OpenAi deployment id.
+        azure_deployment: An optional Azure OpenAi deployment id. Defaults to the model name.
         azure_endpoint: An Azure OpenAi endpoint.
         azure_ad_token: An optional Azure Active Directory token.
         azure_ad_token_provider: An optional Azure Active Directory token provider.
@@ -17,10 +17,14 @@ class AzureOpenAiChatPromptDriver(OpenAiChatPromptDriver):
         client: An `openai.AzureOpenAI` client.
     """
 
-    azure_deployment: str = field(kw_only=True, metadata={"serializable": True})
+    azure_deployment: str = field(
+        kw_only=True, default=Factory(lambda self: self.model, takes_self=True), metadata={"serializable": True}
+    )
     azure_endpoint: str = field(kw_only=True, metadata={"serializable": True})
-    azure_ad_token: Optional[str] = field(kw_only=True, default=None, metadata={"serializable": True})
-    azure_ad_token_provider: Optional[str] = field(kw_only=True, default=None, metadata={"serializable": True})
+    azure_ad_token: Optional[str] = field(kw_only=True, default=None, metadata={"serializable": False})
+    azure_ad_token_provider: Optional[Callable[[], str]] = field(
+        kw_only=True, default=None, metadata={"serializable": False}
+    )
     api_version: str = field(default="2023-05-15", kw_only=True, metadata={"serializable": True})
     client: openai.AzureOpenAI = field(
         default=Factory(

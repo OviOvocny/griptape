@@ -1,9 +1,12 @@
 from __future__ import annotations
+import re
 import json
 from typing import Optional, TYPE_CHECKING
 from attr import define, field
+from schema import Schema
+
 from griptape import utils
-from griptape.artifacts import InfoArtifact, BaseArtifact, ErrorArtifact
+from griptape.artifacts import InfoArtifact, BaseArtifact, ErrorArtifact, ListArtifact
 from griptape.tasks import PromptTask, ActionsSubtask
 from griptape.tools import BaseTool
 from griptape.utils import J2
@@ -16,6 +19,8 @@ if TYPE_CHECKING:
 
 @define
 class ToolTask(PromptTask, ActionsSubtaskOriginMixin):
+    ACTION_PATTERN = r"(?s)[^{]*({.*})"
+
     tool: BaseTool = field(kw_only=True)
     subtask: Optional[ActionsSubtask] = field(default=None, kw_only=True)
     task_memory: Optional[TaskMemory] = field(default=None, kw_only=True)
@@ -39,31 +44,34 @@ class ToolTask(PromptTask, ActionsSubtaskOriginMixin):
             meta_memory=J2("memory/meta/meta_memory.j2").render(meta_memories=self.meta_memories),
         )
 
-    def actions_schema(self) -> dict:
+    def actions_schema(self) -> Schema:
         return self._actions_schema_for_tools([self.tool])
 
     def run(self) -> BaseArtifact:
         prompt_output = self.prompt_driver.run(prompt_stack=self.prompt_stack).to_text()
+        action_matches = re.findall(self.ACTION_PATTERN, prompt_output, re.DOTALL)
 
-        try:
-            action_dict = json.loads(prompt_output)
+        if action_matches:
+            try:
+                data = action_matches[-1]
+                action_dict = json.loads(data)
+                action_dict["tag"] = self.tool.name
+                subtask_input = J2("tasks/tool_task/subtask.j2").render(action_json=json.dumps(action_dict))
+                subtask = self.add_subtask(ActionsSubtask(subtask_input))
 
-            action_dict["output_label"] = self.tool.name
+                subtask.before_run()
+                subtask.run()
+                subtask.after_run()
 
-            subtask_input = J2("tasks/tool_task/subtask.j2").render(action_json=json.dumps(action_dict))
-            subtask = self.add_subtask(ActionsSubtask(subtask_input))
-
-            subtask.before_run()
-            subtask.run()
-            subtask.after_run()
-
-            if subtask.output:
-                self.output = subtask.output
-            else:
-                self.output = InfoArtifact("No tool output")
-        except Exception as e:
-            self.output = ErrorArtifact(f"Error processing tool input: {e}")
-        return self.output
+                if isinstance(subtask.output, ListArtifact):
+                    self.output = subtask.output[0]
+                else:
+                    self.output = InfoArtifact("No tool output")
+            except Exception as e:
+                self.output = ErrorArtifact(f"Error processing tool input: {e}", exception=e)
+            return self.output
+        else:
+            return ErrorArtifact("No action found in prompt output.")
 
     def find_tool(self, tool_name: str) -> BaseTool:
         if self.tool.name == tool_name:

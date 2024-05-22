@@ -7,7 +7,6 @@ from griptape.artifacts import TextArtifact
 from griptape.utils import PromptStack
 from griptape.drivers import BasePromptDriver
 from griptape.tokenizers import OpenAiTokenizer, BaseTokenizer
-from typing import Tuple, Type
 import dateparser
 from datetime import datetime, timedelta
 
@@ -35,7 +34,7 @@ class OpenAiChatPromptDriver(BasePromptDriver):
     """
 
     base_url: Optional[str] = field(default=None, kw_only=True, metadata={"serializable": True})
-    api_key: Optional[str] = field(default=None, kw_only=True, metadata={"serializable": True})
+    api_key: Optional[str] = field(default=None, kw_only=True, metadata={"serializable": False})
     organization: Optional[str] = field(default=None, kw_only=True, metadata={"serializable": True})
     client: openai.OpenAI = field(
         default=Factory(
@@ -123,7 +122,7 @@ class OpenAiChatPromptDriver(BasePromptDriver):
 
         messages = self._prompt_stack_to_messages(prompt_stack)
 
-        if self.max_tokens:
+        if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
 
         params["messages"] = messages

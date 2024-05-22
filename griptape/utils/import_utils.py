@@ -3,7 +3,12 @@ from types import ModuleType
 from typing import Optional
 
 
-INSTALL_MAPPING = {"huggingface_hub": "huggingface-hub", "pinecone": "pinecone-client", "opensearchpy": "opensearch-py"}
+INSTALL_MAPPING = {
+    "huggingface_hub": "huggingface-hub",
+    "pinecone": "pinecone-client",
+    "opensearchpy": "opensearch-py",
+    "google.generativeai": "google-generativeai",
+}
 
 
 def import_optional_dependency(name: str) -> Optional[ModuleType]:
@@ -28,3 +33,20 @@ def import_optional_dependency(name: str) -> Optional[ModuleType]:
         raise ImportError(msg)
 
     return module
+
+
+def is_dependency_installed(name: str) -> bool:
+    """Check if an optional dependency is available.
+
+    Args:
+        name: The module name.
+    Returns:
+        True if the dependency is available.
+        False if the dependency is not available.
+    """
+    try:
+        import_optional_dependency(name)
+    except ImportError:
+        return False
+
+    return True

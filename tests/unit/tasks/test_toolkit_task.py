@@ -12,6 +12,133 @@ from tests.utils import defaults
 
 
 class TestToolkitSubtask:
+    TARGET_TOOLS_SCHEMA = {
+        "description": "JSON schema for an array of actions.",
+        "type": "array",
+        "items": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "name": {"const": "MockTool"},
+                        "path": {"description": "test description: foo", "const": "test"},
+                        "input": {
+                            "type": "object",
+                            "properties": {
+                                "values": {
+                                    "description": "Test input",
+                                    "type": "object",
+                                    "properties": {"test": {"type": "string"}},
+                                    "required": ["test"],
+                                    "additionalProperties": False,
+                                }
+                            },
+                            "required": ["values"],
+                            "additionalProperties": False,
+                        },
+                        "tag": {"description": "Unique tag name for action execution.", "type": "string"},
+                    },
+                    "required": ["name", "path", "input", "tag"],
+                    "additionalProperties": False,
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "name": {"const": "MockTool"},
+                        "path": {"description": "test description: foo", "const": "test_error"},
+                        "input": {
+                            "type": "object",
+                            "properties": {
+                                "values": {
+                                    "description": "Test input",
+                                    "type": "object",
+                                    "properties": {"test": {"type": "string"}},
+                                    "required": ["test"],
+                                    "additionalProperties": False,
+                                }
+                            },
+                            "required": ["values"],
+                            "additionalProperties": False,
+                        },
+                        "tag": {"description": "Unique tag name for action execution.", "type": "string"},
+                    },
+                    "required": ["name", "path", "input", "tag"],
+                    "additionalProperties": False,
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "name": {"const": "MockTool"},
+                        "path": {"description": "test description", "const": "test_list_output"},
+                        "tag": {"description": "Unique tag name for action execution.", "type": "string"},
+                    },
+                    "required": ["name", "path", "tag"],
+                    "additionalProperties": False,
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "name": {"const": "MockTool"},
+                        "path": {"description": "test description", "const": "test_no_schema"},
+                        "tag": {"description": "Unique tag name for action execution.", "type": "string"},
+                    },
+                    "required": ["name", "path", "tag"],
+                    "additionalProperties": False,
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "name": {"const": "MockTool"},
+                        "path": {"description": "test description: foo", "const": "test_str_output"},
+                        "input": {
+                            "type": "object",
+                            "properties": {
+                                "values": {
+                                    "description": "Test input",
+                                    "type": "object",
+                                    "properties": {"test": {"type": "string"}},
+                                    "required": ["test"],
+                                    "additionalProperties": False,
+                                }
+                            },
+                            "required": ["values"],
+                            "additionalProperties": False,
+                        },
+                        "tag": {"description": "Unique tag name for action execution.", "type": "string"},
+                    },
+                    "required": ["name", "path", "input", "tag"],
+                    "additionalProperties": False,
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "name": {"const": "MockTool"},
+                        "path": {"description": "test description", "const": "test_without_default_memory"},
+                        "input": {
+                            "type": "object",
+                            "properties": {
+                                "values": {
+                                    "description": "Test input",
+                                    "type": "object",
+                                    "properties": {"test": {"type": "string"}},
+                                    "required": ["test"],
+                                    "additionalProperties": False,
+                                }
+                            },
+                            "required": ["values"],
+                            "additionalProperties": False,
+                        },
+                        "tag": {"description": "Unique tag name for action execution.", "type": "string"},
+                    },
+                    "required": ["name", "path", "input", "tag"],
+                    "additionalProperties": False,
+                },
+            ]
+        },
+        "$id": "Actions Schema",
+        "$schema": "http://json-schema.org/draft-07/schema#",
+    }
+
     @pytest.fixture
     def query_engine(self):
         return VectorQueryEngine(
@@ -71,7 +198,7 @@ class TestToolkitSubtask:
     def test_init_from_prompt_1(self):
         valid_input = (
             "Thought: need to test\n"
-            'Actions: [{"output_label": "foo", "name": "Tool1", "path": "test", "input": {"values": {"test": "value"}}}]\n'
+            'Actions: [{"tag": "foo", "name": "Tool1", "path": "test", "input": {"values": {"test": "value"}}}]\n'
             "<|Response|>: test observation\n"
             "Answer: test output"
         )
@@ -82,7 +209,7 @@ class TestToolkitSubtask:
         subtask = task.add_subtask(ActionsSubtask(valid_input))
 
         assert subtask.thought == "need to test"
-        assert subtask.actions[0].output_label == "foo"
+        assert subtask.actions[0].tag == "foo"
         assert subtask.actions[0].name == "Tool1"
         assert subtask.actions[0].path == "test"
         assert subtask.actions[0].input == {"values": {"test": "value"}}
@@ -104,12 +231,10 @@ class TestToolkitSubtask:
     def test_add_subtask(self):
         task = ToolkitTask("test", tools=[MockTool(name="Tool1")])
         subtask1 = ActionsSubtask(
-            "test1",
-            actions=[ActionsSubtask.Action(output_label="foo", name="test", path="test", input={"values": {"f": "b"}})],
+            "test1", actions=[ActionsSubtask.Action(tag="foo", name="test", path="test", input={"values": {"f": "b"}})]
         )
         subtask2 = ActionsSubtask(
-            "test2",
-            actions=[ActionsSubtask.Action(output_label="foo", name="test", path="test", input={"values": {"f": "b"}})],
+            "test2", actions=[ActionsSubtask.Action(tag="foo", name="test", path="test", input={"values": {"f": "b"}})]
         )
 
         Agent().add_task(task)
@@ -130,12 +255,10 @@ class TestToolkitSubtask:
     def test_find_subtask(self):
         task = ToolkitTask("test", tools=[MockTool(name="Tool1")])
         subtask1 = ActionsSubtask(
-            "test1",
-            actions=[ActionsSubtask.Action(output_label="foo", name="test", path="test", input={"values": {"f": "b"}})],
+            "test1", actions=[ActionsSubtask.Action(tag="foo", name="test", path="test", input={"values": {"f": "b"}})]
         )
         subtask2 = ActionsSubtask(
-            "test2",
-            actions=[ActionsSubtask.Action(output_label="foo", name="test", path="test", input={"values": {"f": "b"}})],
+            "test2", actions=[ActionsSubtask.Action(tag="foo", name="test", path="test", input={"values": {"f": "b"}})]
         )
 
         Agent().add_task(task)
@@ -209,4 +332,4 @@ class TestToolkitSubtask:
 
         Agent().add_task(task)
 
-        assert isinstance(task.actions_schema(), dict)
+        assert task.actions_schema().json_schema("Actions Schema") == self.TARGET_TOOLS_SCHEMA

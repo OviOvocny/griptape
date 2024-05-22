@@ -5,7 +5,9 @@ from .text_artifact import TextArtifact
 from .blob_artifact import BlobArtifact
 from .csv_row_artifact import CsvRowArtifact
 from .list_artifact import ListArtifact
+from .media_artifact import MediaArtifact
 from .image_artifact import ImageArtifact
+from .audio_artifact import AudioArtifact
 
 
 __all__ = [
@@ -16,5 +18,7 @@ __all__ = [
     "BlobArtifact",
     "CsvRowArtifact",
     "ListArtifact",
+    "MediaArtifact",
     "ImageArtifact",
+    "AudioArtifact",
 ]

@@ -5,7 +5,6 @@ from griptape.artifacts import TextArtifact
 from griptape.utils import PromptStack
 from griptape.drivers import BasePromptDriver
 from griptape.tokenizers import OpenAiTokenizer
-from typing import Tuple, Type
 import openai
 
 
@@ -24,7 +23,7 @@ class OpenAiCompletionPromptDriver(BasePromptDriver):
     """
 
     base_url: Optional[str] = field(default=None, kw_only=True, metadata={"serializable": True})
-    api_key: Optional[str] = field(default=None, kw_only=True, metadata={"serializable": True})
+    api_key: Optional[str] = field(default=None, kw_only=True, metadata={"serializable": False})
     organization: Optional[str] = field(default=None, kw_only=True, metadata={"serializable": True})
     client: openai.OpenAI = field(
         default=Factory(

@@ -7,9 +7,103 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Added
+- `AzureOpenAiStructureConfig` for providing Structures with all Azure OpenAI Driver configuration.
+- `AzureOpenAiVisionImageQueryDriver` to support queries on images using Azure's OpenAI Vision models.
+
+### Changed
+- Default the value of `azure_deployment` on all Azure Drivers to the model the Driver is using.
+- Field `azure_ad_token` on all Azure Drivers is no longer serializable.
+
+## [0.25.1] - 2024-05-15
+
+### Fixed
+- Honor `namespace` in `RedisVectorStoreDriver.query()`.
+- Correctly set the `meta`, `score`, and `vector` fields of query result returned from `RedisVectorStoreDriver.query()`.
+- Standardize behavior between omitted and empty actions list when initializing `ActionsSubtask`.
+
+### Added
+- Optional event batching on Event Listener Drivers.
+- `id` field to all events.
+
+### Changed
+- Default behavior of Event Listener Drivers to batch events.
+- Default behavior of OpenAiStructureConfig to utilize `gpt-4o` for prompt_driver.
+
+## [0.25.0] - 2024-05-06
+
+### Added
+- `list_files_from_disk` activity to `FileManager` Tool.
+- Support for Drivers in `EventListener`.
+- `AmazonSqsEventListenerDriver` for sending events to an Amazon SQS queue.
+- `AwsIotCoreEventListenerDriver` for sending events to a topic on AWS IoT Core.
+- `GriptapeCloudEventListenerDriver` for sending events to Griptape Cloud.
+- `WebhookEventListenerDriver` for sending events to a webhook.
+- `BaseFileManagerDriver` to abstract file management operations.
+- `LocalFileManagerDriver` for managing files on the local file system.
+- Optional `BaseLoader.encoding` field.
+- `BlobLoader` for loading arbitrary binary data as a `BlobArtifact`.
+- `model` field to `StartPromptEvent` and `FinishPromptEvent`.
+- `input_task_input` and `input_task_output` fields to `StartStructureRunEvent`.
+- `output_task_input` and `output_task_output` fields to `FinishStructureRunEvent`.
+- `AmazonS3FileManagerDriver` for managing files on Amazon S3.
+- `MediaArtifact` as a base class for `ImageArtifact` and future media Artifacts.
+- Optional `exception` field to `ErrorArtifact`.
+- `StructureRunClient` for running other Structures via a Tool.
+- `StructureRunTask` for running Structures as a Task from within another Structure.
+- `GriptapeCloudStructureRunDriver` for running Structures in Griptape Cloud.
+- `LocalStructureRunDriver` for running Structures in the same run-time environment as the code that is running the Structure.
+
+### Changed
+- **BREAKING**: Secret fields (ex: api_key) removed from serialized Drivers.
+- **BREAKING**: Remove `FileLoader`.
+- **BREAKING**: `CsvLoader` no longer accepts `str` file paths as a source. It will now accept the content of the CSV file as a `str` or `bytes` object.
+- **BREAKING**: `PdfLoader` no longer accepts `str` file content, `Path` file paths or `IO` objects as sources. Instead, it will only accept the content of the PDF file as a `bytes` object.
+- **BREAKING**: `TextLoader` no longer accepts `Path` file paths as a source. It will now accept the content of the text file as a `str` or `bytes` object.
+- **BREAKING**: `FileManager.default_loader` is now `None` by default.
+- **BREAKING** Bumped `pinecone` from `^2` to `^3`.
+- **BREAKING**: Removed `workdir`, `loaders`, `default_loader`, and `save_file_encoding` fields from `FileManager` and added `file_manager_driver`.
+- **BREAKING**: Removed `mime_type` field from `ImageArtifact`. `mime_type` is now a property constructed using the Artifact type and `format` field.
+- Improved RAG performance in `VectorQueryEngine`.
+- Moved [Griptape Docs](https://github.com/griptape-ai/griptape-docs) to this repository.
+- Updated `EventListener.handler`'s behavior so that the return value will be passed to the `EventListenerDriver.try_publish_event_payload`'s `event_payload` parameter.
+
+### Fixed
+- Type hint for parameter `azure_ad_token_provider` on Azure OpenAI drivers to `Optional[Callable[[], str]]`.
+- Missing parameters `azure_ad_token` and `azure_ad_token_provider` on the default client for `AzureOpenAiCompletionPromptDriver`.
+
+## [0.24.2] - 2024-04-04
+
+- Fixed FileManager.load_files_from_disk schema.
+
+## [0.24.1] - 2024-03-28
+
+### Fixed 
+
+- Fixed boto3 type-checking stub dependency.
+
+### Changed
+
+- Use `schema` instead of `jsonschema` for JSON validation.
+
+## [0.24.0] - 2024-03-27
+
+### Added
 - Every subtask in `ToolkitTask` can now execute multiple actions in parallel.
 - Added `BaseActionSubtaskEvent.subtask_actions`.
 - Support for `text-embedding-3-small` and `text-embedding-3-large` models.
+- `GooglePromptDriver` and `GoogleTokenizer` for use with `gemini-pro`. 
+- `GoogleEmbeddingDriver` for use with `embedding-001`. 
+- `GoogleStructureConfig` for providing Structures with Google Prompt and Embedding Driver configuration.
+- Support for `claude-3-opus`, `claude-3-sonnet`, and `claude-3-haiku` in `AnthropicPromptDriver`.
+- Support for `anthropic.claude-3-sonnet-20240229-v1:0` and `anthropic.claude-3-haiku-20240307-v1:0` in `BedrockClaudePromptModelDriver`.
+- `top_k` and `top_p` parameters in `AnthropicPromptDriver`.
+- Added `AnthropicImageQueryDriver` for Claude-3 multi-modal models
+- Added `AmazonBedrockImageQueryDriver` along with `BedrockClaudeImageQueryDriverModel` for Claude-3 in Bedrock support
+- `BaseWebScraperDriver` allowing multiple web scraping implementations.
+- `TrafilaturaWebScraperDriver` for scraping text from web pages using trafilatura.
+- `MarkdownifyWebScraperDriver` for scraping text from web pages using playwright and converting to markdown using markdownify.
+- `VoyageAiEmbeddingDriver` for use with VoyageAi's embedding models. 
+- `AnthropicStructureConfig` for providing Structures with Anthropic Prompt and VoyageAi Embedding Driver configuration.
 
 ### Fixed
 - Improved system prompt in `ToolTask` to support more use cases.
@@ -17,9 +111,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **BREAKING**: `ActionSubtask` was renamed to `ActionsSubtask`.
 - **BREAKING**: Removed `subtask_action_name`, `subtask_action_path`, and `subtask_action_input` in `BaseActionSubtaskEvent`.
-- Default embedding model of `OpenAiEmbeddingDriver` to `text-embedding-3-small`.
-- Default embedding model of `OpenAiStructureConfig` to `text-embedding-3-small`.
+- **BREAKING**: `OpenAiVisionImageQueryDriver` field `model` no longer defaults to `gpt-4-vision-preview` and must be specified
+- Default model of `OpenAiEmbeddingDriver` to `text-embedding-3-small`.
+- Default model of `OpenAiStructureConfig` to `text-embedding-3-small`.
 - `BaseTextLoader` to accept a `BaseChunker`.
+- Default model of `AmazonBedrockStructureConfig` to `anthropic.claude-3-sonnet-20240229-v1:0`.
+- `AnthropicPromptDriver` and `BedrockClaudePromptModelDriver` to use Anthropic's Messages API.
+- `OpenAiVisionImageQueryDriver` now has a required field `max_tokens` that defaults to 256
+
 ## [0.23.2] - 2024-03-15
 
 ### Fixed
@@ -52,13 +151,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ImageQueryTask` and `ImageQueryEngine`.
 
 ### Fixed 
-- `BedrockStableDiffusionImageGenerationModelDriver` request parameters for SDXLv1.
+- `BedrockStableDiffusionImageGenerationModelDriver` request parameters for SDXLv1 (`stability.stable-diffusion-xl-v1`).
 - `BedrockStableDiffusionImageGenerationModelDriver` correctly handles the CONTENT_FILTERED response case.
 
 ### Changed
 - **BREAKING**: Make `index_name` on `MongoDbAtlasVectorStoreDriver` a required field.
 - **BREAKING**: Remove `create_index()` from `MarqoVectorStoreDriver`, `OpenSearchVectorStoreDriver`, `PineconeVectorStoreDriver`, `RedisVectorStoreDriver`.
 - **BREAKING**: `ImageLoader().load()` now accepts image bytes instead of a file path.
+- **BREAKING**: Request parameters for `BedrockStableDiffusionImageGenerationModelDriver` have been updated for `stability.stable-diffusion-xl-v1`. Use this over the now deprecated `stability.stable-diffusion-xl-v0`.
 - Deprecated `Structure.prompt_driver` in favor of `Structure.config.global_drivers.prompt_driver`.
 - Deprecated `Structure.embedding_driver` in favor of `Structure.config.global_drivers.embedding_driver`.
 - Deprecated `Structure.stream` in favor of `Structure.config.global_drivers.prompt_driver.stream`.
@@ -77,7 +177,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.22.2] - 2024-01-18
 
 ### Fixed
-- `ToolkitTask`'s user subtask prompt occassionally causing a loop with Chain of Thought.
+- `ToolkitTask`'s user subtask prompt occasionally causing a loop with Chain of Thought.
 
 ### Security
 - Updated stale dependencies [CVE-2023-50447, CVE-2024-22195, and CVE-2023-36464]

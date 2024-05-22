@@ -2,9 +2,9 @@ from __future__ import annotations
 import json
 import re
 from typing import Optional, TYPE_CHECKING, Callable
+
+import schema
 from attr import define, field
-from jsonschema.exceptions import ValidationError
-from jsonschema.validators import validate
 from griptape import utils
 from griptape.utils import remove_null_values_in_dict_recursively
 from griptape.mixins import ActionsSubtaskOriginMixin
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class ActionsSubtask(BaseTextInputTask):
     @define(kw_only=True)
     class Action:
-        output_label: str = field()
+        tag: str = field()
         name: str = field()
         path: Optional[str] = field(default=None)
         input: dict = field()
@@ -93,8 +93,6 @@ class ActionsSubtask(BaseTextInputTask):
         self.structure.logger.info(f"Subtask {self.id}\n{self.input.to_text()}")
 
     def run(self) -> BaseArtifact:
-        format_output: Callable[[tuple[str, BaseArtifact]], str] = lambda o: f"{o[0]} output: {o[1].to_text()}"
-
         try:
             if any(a.name == "error" for a in self.actions):
                 errors = [a.input["error"] for a in self.actions if a.name == "error"]
@@ -103,11 +101,11 @@ class ActionsSubtask(BaseTextInputTask):
             else:
                 results = self.execute_actions(self.actions)
 
-                self.output = ListArtifact([TextArtifact(format_output(r)) for r in results])
+                self.output = ListArtifact([TextArtifact(name=f"{r[0]} output", value=r[1].to_text()) for r in results])
         except Exception as e:
             self.structure.logger.error(f"Subtask {self.id}\n{e}", exc_info=True)
 
-            self.output = ErrorArtifact(str(e))
+            self.output = ErrorArtifact(str(e), exception=e)
         finally:
             if self.output is not None:
                 return self.output
@@ -116,7 +114,7 @@ class ActionsSubtask(BaseTextInputTask):
 
     def execute_actions(self, actions: list[Action]) -> list[tuple[str, BaseArtifact]]:
         results = utils.execute_futures_dict(
-            {a.output_label: self.futures_executor.submit(self.execute_action, a) for a in actions}
+            {a.tag: self.futures_executor.submit(self.execute_action, a) for a in actions}
         )
 
         return [r for r in results.values()]
@@ -130,7 +128,7 @@ class ActionsSubtask(BaseTextInputTask):
         else:
             output = ErrorArtifact("action name not found")
 
-        return action.output_label, output
+        return action.tag, output
 
     def after_run(self) -> None:
         response = self.output.to_text() if isinstance(self.output, BaseArtifact) else str(self.output)
@@ -155,8 +153,8 @@ class ActionsSubtask(BaseTextInputTask):
         for action in self.actions:
             json_dict = {}
 
-            if action.output_label:
-                json_dict["output_label"] = action.output_label
+            if action.tag:
+                json_dict["tag"] = action.tag
 
             if action.name:
                 json_dict["name"] = action.name
@@ -200,73 +198,76 @@ class ActionsSubtask(BaseTextInputTask):
         if self.thought is None and len(thought_matches) > 0:
             self.thought = thought_matches[-1]
 
-        if len(actions_matches) > 0:
-            try:
-                data = actions_matches[-1]
-                actions_list: list = json.loads(data, strict=False)
+        self.__parse_actions(actions_matches)
 
-                if isinstance(self.origin_task, ActionsSubtaskOriginMixin):
-                    validate(instance=actions_list, schema=self.origin_task.actions_schema())
-
-                for action_object in actions_list:
-                    # Load action name; throw exception if the key is not present
-                    action_output_label = action_object["output_label"]
-
-                    # Load action name; throw exception if the key is not present
-                    action_name = action_object["name"]
-
-                    # Load action method; throw exception if the key is not present
-                    action_path = action_object["path"]
-
-                    # Load optional input value; don't throw exceptions if key is not present
-                    if "input" in action_object:
-                        # The schema library has a bug, where something like `Or(str, None)` doesn't get
-                        # correctly translated into JSON schema. For some optional input fields LLMs sometimes
-                        # still provide null value, which trips up the validator. The temporary solution that
-                        # works is to strip all key-values where value is null.
-                        action_input = remove_null_values_in_dict_recursively(action_object["input"])
-                    else:
-                        action_input = {}
-
-                    # Load the action itself
-                    if isinstance(self.origin_task, ActionsSubtaskOriginMixin):
-                        tool = self.origin_task.find_tool(action_name)
-                    else:
-                        raise Exception(
-                            "ActionSubtask must be attached to a Task that implements ActionSubtaskOriginMixin."
-                        )
-
-                    new_action = ActionsSubtask.Action(
-                        output_label=action_output_label,
-                        name=action_name,
-                        path=action_path,
-                        input=action_input,
-                        tool=tool,
-                    )
-
-                    if new_action.tool:
-                        if new_action.input:
-                            self.__validate_action(new_action)
-
-                    # Don't forget to add it to the subtask actions list!
-                    self.actions.append(new_action)
-            except SyntaxError as e:
-                self.structure.logger.error(f"Subtask {self.origin_task.id}\nSyntax error: {e}")
-
-                self.actions.append(self.__error_to_action(f"syntax error: {e}"))
-            except ValidationError as e:
-                self.structure.logger.error(f"Subtask {self.origin_task.id}\nInvalid action JSON: {e}")
-
-                self.actions.append(self.__error_to_action(f"Action JSON validation error: {e}"))
-            except Exception as e:
-                self.structure.logger.error(f"Subtask {self.origin_task.id}\nError parsing tool action: {e}")
-
-                self.actions.append(self.__error_to_action(f"Action input parsing error: {e}"))
-        elif self.output is None and len(answer_matches) > 0:
+        # If there are no actions to take but an answer is provided, set the answer as the output.
+        if len(self.actions) == 0 and self.output is None and len(answer_matches) > 0:
             self.output = TextArtifact(answer_matches[-1])
 
+    def __parse_actions(self, actions_matches: list[str]) -> None:
+        if len(actions_matches) == 0:
+            return
+
+        try:
+            data = actions_matches[-1]
+            actions_list: list = json.loads(data, strict=False)
+
+            if isinstance(self.origin_task, ActionsSubtaskOriginMixin):
+                self.origin_task.actions_schema().validate(actions_list)
+
+            for action_object in actions_list:
+                # Load action name; throw exception if the key is not present
+                action_tag = action_object["tag"]
+
+                # Load action name; throw exception if the key is not present
+                action_name = action_object["name"]
+
+                # Load action method; throw exception if the key is not present
+                action_path = action_object["path"]
+
+                # Load optional input value; don't throw exceptions if key is not present
+                if "input" in action_object:
+                    # The schema library has a bug, where something like `Or(str, None)` doesn't get
+                    # correctly translated into JSON schema. For some optional input fields LLMs sometimes
+                    # still provide null value, which trips up the validator. The temporary solution that
+                    # works is to strip all key-values where value is null.
+                    action_input = remove_null_values_in_dict_recursively(action_object["input"])
+                else:
+                    action_input = {}
+
+                # Load the action itself
+                if isinstance(self.origin_task, ActionsSubtaskOriginMixin):
+                    tool = self.origin_task.find_tool(action_name)
+                else:
+                    raise Exception(
+                        "ActionSubtask must be attached to a Task that implements ActionSubtaskOriginMixin."
+                    )
+
+                new_action = ActionsSubtask.Action(
+                    tag=action_tag, name=action_name, path=action_path, input=action_input, tool=tool
+                )
+
+                if new_action.tool:
+                    if new_action.input:
+                        self.__validate_action(new_action)
+
+                # Don't forget to add it to the subtask actions list!
+                self.actions.append(new_action)
+        except SyntaxError as e:
+            self.structure.logger.error(f"Subtask {self.origin_task.id}\nSyntax error: {e}")
+
+            self.actions.append(self.__error_to_action(f"syntax error: {e}"))
+        except schema.SchemaError as e:
+            self.structure.logger.error(f"Subtask {self.origin_task.id}\nInvalid action JSON: {e}")
+
+            self.actions.append(self.__error_to_action(f"Action JSON validation error: {e}"))
+        except Exception as e:
+            self.structure.logger.error(f"Subtask {self.origin_task.id}\nError parsing tool action: {e}")
+
+            self.actions.append(self.__error_to_action(f"Action input parsing error: {e}"))
+
     def __error_to_action(self, error: str) -> Action:
-        return ActionsSubtask.Action(output_label="error", name="error", input={"error": error})
+        return ActionsSubtask.Action(tag="error", name="error", input={"error": error})
 
     def __validate_action(self, action: Action) -> None:
         try:
@@ -281,8 +282,8 @@ class ActionsSubtask(BaseTextInputTask):
                 raise Exception("Activity not found.")
 
             if activity_schema:
-                validate(instance=action.input, schema=activity_schema)
-        except ValidationError as e:
+                activity_schema.validate(action.input)
+        except schema.SchemaError as e:
             self.structure.logger.error(f"Subtask {self.origin_task.id}\nInvalid activity input JSON: {e}")
 
             self.actions.append(self.__error_to_action(f"Activity input JSON validation error: {e}"))

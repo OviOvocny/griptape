@@ -7,7 +7,7 @@ from griptape.artifacts import TextArtifact, CsvRowArtifact, ListArtifact, Error
 from griptape.utils import PromptStack
 from griptape.engines import BaseExtractionEngine
 from griptape.utils import J2
-from griptape.rules import Ruleset, rule
+from griptape.rules import Ruleset
 
 
 @define
@@ -60,7 +60,7 @@ class CsvExtractionEngine(BaseExtractionEngine):
             rulesets=J2("rulesets/rulesets.j2").render(rulesets=rulesets),
         )
 
-        if self.prompt_driver.tokenizer.count_tokens_left(full_text) >= self.min_response_tokens:
+        if self.prompt_driver.tokenizer.count_input_tokens_left(full_text) >= self.min_response_tokens:
             rows.extend(
                 self.text_to_csv_rows(
                     self.prompt_driver.run(
